@@ -8,14 +8,26 @@ class MdSpliter():
         self.content = read_file(self.md_path)
         self.split_content = []
         self.pre_split_bool = pre_split
-    def extract_titles(self, sub_md_content):
-        pattern = re.compile(r'^(#+\s+)(.*)', re.MULTILINE)
+    def extract_titles(self, sub_md_content, level=1):
+        # pattern = re.compile(r'^(##+\s+)(.*)', re.MULTILINE)
+        pattern = re.compile(r'^(#{' + str(level) + r',}\s+)(.*)', re.MULTILINE)
         matches = pattern.findall(sub_md_content)
+        # print(matches)
         if len(matches) != 0:
             titles = matches[-1]
             titles_str = "{}{}\n".format(titles[0], titles[1])
+
             return titles_str
+        # elif len(matches) > 1:
+        #     first_titles = matches[0]
+        #     last
         else:
+            # if level == 1:
+            #     print("================================")
+            #     print(sub_md_content)
+            #     print(level)
+            #     print("================================")
+
             return None
     # def code_split(self, code_content):
     #     code_block_pattern = re.compile(r'```[\s\S]*?```', re.DOTALL)
@@ -29,30 +41,38 @@ class MdSpliter():
         pre_content = []
         for i in content_list:
             if len(i) > 1000:
-                sub_title = self.extract_titles(i)
+                # print(i)
+                sub_title = self.extract_titles(i, level=1)
+                # print(sub_title)
+                # print(i)
+                # print()
                 # len_sub_title = len(sub_title)
-                split_num = len(i) // 900 if len(i) % 900 == 0 else len(i) // 900 + 1
+                split_num = len(i) // 950 if len(i) % 950 == 0 else len(i) // 950 + 1
                 for j in range(split_num):
-                    chunk = i[j*900: j*900 + 900]
-                    temp_sub_title = self.extract_titles(chunk)
-                    if temp_sub_title is not None and j != 0:
+                    chunk = i[j*950: j*950 + 950] + "\n"
+                    temp_sub_title = self.extract_titles(chunk, level=2)
+                    # print("========")
+                    # print(temp_sub_title)
+                    # print("=========")
+                    if temp_sub_title is not None:
                         pass
                     elif temp_sub_title is None:
                         chunk = sub_title + chunk
                         # sub_title = temp_sub_title
                     # if j != 0 and temp_sub_title is not None:
                     #     chunk = sub_title + chunk
+
                     pre_content.append(chunk)
             else:
-                pre_content.append(i)
-
+                pre_content.append(i+"\n")
+        # print(pre_content)
         return pre_content
 
 
     def split(self, content=None):
         if content is None:
             content = self.content
-        pattern = re.compile(r'(#+\s+.*?)(?=\n#+\s|$)', re.DOTALL)
+        pattern = re.compile(r'(#+\s+.*?)(?=\n##+\s|$)', re.DOTALL)
         matches = pattern.findall(content)
         #
         # for i in matches:

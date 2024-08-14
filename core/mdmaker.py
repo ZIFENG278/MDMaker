@@ -10,7 +10,7 @@ class MDMaker():
         self.add_title = None
         # self.dst_path
         self.no_need_path = project_path
-    def remove_image(self):
+    def remove_image_html(self):
         markdown_image_pattern = re.compile(r'!\[.*?\]\(.*?\)', re.MULTILINE)
         html_image_pattern = re.compile(r'<img\s+[^>]*>', re.MULTILINE)
         html_image_pattern2 = re.compile(r'<Image\s+[^>]*>', re.MULTILINE)
@@ -18,6 +18,11 @@ class MDMaker():
         section_pattern2 = re.compile(r'</TabItem>|<TabItem\s+[^>]*>', re.MULTILINE)
         section_pattern3 = re.compile(r'</Tabs>|<Tabs\s+[^>]*>', re.MULTILINE)
         section_pattern4 = re.compile(r'</DocCardList>|<DocCardList\s+[^>]*>', re.MULTILINE)
+        section_pattern5 = re.compile(r'</div>|<div\s+[^>]*>', re.MULTILINE)
+        section_pattern6 = re.compile(r'</details>|<details\s+[^>]*>', re.MULTILINE)
+        section_pattern7 = re.compile(r'</summary>|<summary\s+[^>]*>', re.MULTILINE)
+        section_pattern8 = re.compile(r'<details[\s\S]*?<\/details>', re.DOTALL)
+        # section_pattern4 = re.compile(r'<br/>|<DocCardList\s+[^>]*>', re.MULTILINE)
 
         self.content = markdown_image_pattern.sub('', self.content)
         self.content = html_image_pattern.sub('', self.content)
@@ -26,7 +31,30 @@ class MDMaker():
         self.content = section_pattern2.sub('', self.content)
         self.content = section_pattern3.sub('', self.content)
         self.content = section_pattern4.sub('', self.content)
+        self.content = section_pattern5.sub('', self.content)
+        # self.content = section_pattern6.sub('', self.content)
+        self.content = section_pattern8.sub('', self.content)
+        self.content = re.sub(r'<br/>', '', self.content)
         self.content = re.sub(r'\n{2,}', '\n', self.content)
+
+    def remove_table(self):
+        # print("!!!!!!!!!!!!!!!!!")
+        self.content = re.sub(r'---{2,}', '', self.content)
+        self.content = re.sub(r'─{2,}', '', self.content)
+        self.content = re.sub(r'___{2,}', '', self.content)
+        self.content = re.sub(r'   {2,}', '', self.content)
+        self.content = re.sub(r'│', '', self.content)
+        self.content = re.sub(r'\|', '', self.content)
+        self.content = re.sub(r'┤', '', self.content)
+        self.content = re.sub(r'├', '', self.content)
+        self.content = re.sub(r'┐', '', self.content)
+        self.content = re.sub(r'┌', '', self.content)
+        self.content = re.sub(r'└', '', self.content)
+        self.content = re.sub(r'┘', '', self.content)
+        self.content = re.sub(r'▒', '', self.content)
+        self.content = re.sub(r':{2,}', '', self.content)
+        self.content = re.sub(r'\n{2,}', '\n', self.content)
+
 
 
     def get_add_title(self, no_need_path="/home/zifeng/Job/git_clone/docs-template/contents/docs/"):
@@ -105,31 +133,40 @@ class MDMaker():
 
     def write_md(self):
         file_path = os.path.abspath(self.md_path)
+        print(file_path)
         file_path = file_path[len(self.no_need_path) + 1:]
-        # print(file_path)
-        if file_path == "README.md":
-            dir_name = ""
+
+        if "/" not in file_path:
+            dir_name = './'
+            file_name = file_path
+            product_name = ''
         else:
             dir_name = file_path.rsplit('/', 1)[0]
-        file_name = file_path.rsplit('/', 1)[-1]
-        dst_dir_path = os.path.join("./dist/", dir_name)
+            file_path_split = file_path.split('/')
+            if len(file_path_split) > 2:
+                product_name = file_path_split[1] + "_"
+                file_name = file_path_split[-1]
+            else:
+                product_name = file_path_split[0] + "_"
+                file_name = file_path_split[-1]
 
-        if file_name == "README.md":
-            father_name = dst_dir_path.rsplit('/', 1)[-1]
-            file_name = "{}_{}".format(father_name, file_name)
-        # print(file_name)
+
+        dst_dir_path = os.path.join("./dist/", dir_name)
         # print(dst_dir_path)
+        # print(os.path.join(dst_dir_path, "{}_{}".format(product_name, file_name)))
+
         if not os.path.exists(dst_dir_path):
             os.makedirs(dst_dir_path, exist_ok=True)
         # print(os.path.join(dst_dir_path, file_name))
-
-        write_file(self.content, os.path.join(dst_dir_path, file_name))
-
+        dst_path = os.path.join(dst_dir_path, "{}{}".format(product_name, file_name))
         if self.find_table():
-            print("WARNING: {} with table".format(self.md_path))
-            return os.path.abspath(os.path.join(dst_dir_path, file_name))
+            # print("WARNING: {} with table".format(self.md_path))
+            self.remove_table()
+            write_file(self.content, dst_path)
+            return "WARNING", os.path.abspath(dst_path)
         else:
-            return None
+            write_file(self.content, dst_path)
+            return "ACCEPT", os.path.abspath(dst_path)
 
 
 
@@ -138,12 +175,12 @@ class MDMaker():
         # print(self.md_path)
         self.remove_sidebar()
         self.import_mdx()
-        self.remove_image()
+        self.remove_image_html()
         self.insert_title()
         result_log = self.write_md()
+        # print(self.content)
 
         return result_log
-        # print(self.content)
 
         # if self.find_table():
         #     self.write_md()
