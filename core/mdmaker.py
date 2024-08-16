@@ -56,6 +56,28 @@ class MDMaker():
         self.content = re.sub(r'\n{2,}', '\n', self.content)
 
 
+    def recover_link(self):
+        link_pattern = re.compile(r'\[\s*([^\]]*)\s*\]\(\s*([^\)]*)\s*\)', re.IGNORECASE)
+        links = link_pattern.findall(self.content)
+        office_link = "https://docs.radxa.com/"
+        file_link = self.md_path[len(self.no_need_path) + 1:-3]
+        file_link = office_link + file_link
+
+        for i in links:
+            if i[1].startswith("https"):
+                continue
+            elif i[1].startswith("#"):
+                pattern = re.compile(r'^(#+)(.*)', re.MULTILINE)
+                matches = pattern.findall(i[1])
+                sub_title = matches[0][-1]
+                http_link = "{}#{}".format(file_link, sub_title)
+                self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
+            else:
+                http_link = "{}/../{}".format(file_link, i[1])
+                self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
+
+                # Relative Path
+
 
     def get_add_title(self, no_need_path="/home/zifeng/Job/git_clone/docs-template/contents/docs/"):
         file_path = os.path.abspath(self.md_path)
@@ -85,9 +107,12 @@ class MDMaker():
                 mdx_path = mdx_path.replace('\'', '')
                 mdx_path = mdx_path.replace(';', '')
                 component_pattern = re.compile(rf'<{import_name}(.*)/>', re.MULTILINE)
+                # component_pattern2 = re.compile(rf'</{import_name}>', re.MULTILINE)
                 component_use = component_pattern.findall(self.content)
+                # component_use2 = component_pattern2.findall(self.content)
                 mdx_file_path = os.path.join(os.path.dirname(self.md_path), mdx_path)
                 # print(component_use)
+                # print(component_use2)
 
                 if len(component_use) != 0:
                     if os.path.exists(mdx_file_path):
@@ -95,18 +120,25 @@ class MDMaker():
                         mdx_content = read_file(mdx_file_path)
                         # print(f"<{import_name}{component_use[0]}/>")
                         # print(f'import {import_name} from {path}')
+                        # if len(component_use) != 0 :
                         self.content = self.content.replace(f'import {import_name} from {path}', '')
                         self.content = self.content.replace(f'<{import_name}{component_use[0]}/>', mdx_content)
-                        # print("{} mdx finish".format(self.md_path))
+                        # print(import_name)
+                            # print("{} mdx finish".format(self.md_path))
+                        # if component_use2 != 0:
+                        #     self.content = self.content.replace(f'import {import_name} from {path}', '')
+                        #     self.content = self.content.replace(f'</{import_name}>', mdx_content)
+
                     else:
                         print(f"Warning: MDX file '{mdx_file_path}' does not exist.")
+
         # print(self.orl_content)
     def remove_sidebar(self):
         side_bar_re = re.compile(r'^---\s*(?:[\s\S]*?)\s*---\s*', re.MULTILINE)
         self.content = side_bar_re.sub('', self.content)
         # print(self.content)
 
-    def insert_title(self, level=4):
+    def insert_title(self, level=5):
         self.get_add_title(no_need_path=self.no_need_path)
 
         # 使用正则表达式找到所有一级标题
@@ -133,7 +165,7 @@ class MDMaker():
 
     def write_md(self):
         file_path = os.path.abspath(self.md_path)
-        print(file_path)
+        # print(file_path)
         file_path = file_path[len(self.no_need_path) + 1:]
 
         if "/" not in file_path:
@@ -177,6 +209,7 @@ class MDMaker():
         self.import_mdx()
         self.remove_image_html()
         self.insert_title()
+        self.recover_link()
         result_log = self.write_md()
         # print(self.content)
 
