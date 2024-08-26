@@ -5,7 +5,7 @@ class KbApi():
     def __init__(self, upload_files_path):
         self.headers = {"accept": "application/json"}
         self.upload_files_path = upload_files_path
-    def api_upload_fiile(self, kb_name):
+    def api_upload_files(self, kb_name):
         if isinstance(self.upload_files_path, str):
             dist2_dir = os.listdir(self.upload_files_path)
             product_list = []
@@ -52,7 +52,7 @@ class KbApi():
 
         data = kb_name
 
-        response = requests.get(url, headers=self.headers, data=data)
+        response = requests.post(url, headers=self.headers, json=data)
 
         if response.status_code == 200:
             data = response.json()
@@ -114,7 +114,7 @@ class KbApi():
             "kb_info": kb_info,
         }
 
-        response = requests.get(url, headers=self.headers, data=data)
+        response = requests.post(url, headers=self.headers, json=data)
 
         if response.status_code == 200:
             data = response.json()
@@ -125,11 +125,22 @@ class KbApi():
 
     def forward(self, kb_name, kb_info, embedding_model="bge-large-zh-v1.5", vector_store_type="faiss"):
         response = self.create_knowledge_base(kb_name, kb_info, embedding_model, vector_store_type)
-        # if response.status_code != 200:
-        #     print(response.json())
-        #     return
-        # self.api_upload_fiile(kb_name)
+        if response.status_code != 200:
+            print(response.json())
+            return
+        self.update_info(kb_name, kb_info)
+        self.api_upload_files(kb_name)
 
+    def updata_vector(self, kb_name):
+        self.api_upload_files(kb_name)
+
+
+    def test_api(self):
+        self.create_knowledge_base("test_api", "test1", )
+        self.list_knowledge_bases()
+        self.update_info("test2", "test_api")
+        self.upload_docs("test_api", "/home/zifeng/Job/git_clone/MDMaker/dist/zero/zero/radxa-os/1_zero_usbnet.md")
+        self.delete_knowledge_base("test_api")
 
 
 

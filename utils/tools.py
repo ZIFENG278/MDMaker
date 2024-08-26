@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+import glob
 
 def read_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -30,3 +31,13 @@ def copy_md_files_with_numeric_prefix(src_dir, dest_dir):
                     src_file = os.path.join(root, file)
                     dest_file = os.path.join(dest_dir, file)
                     shutil.copy(src_file, dest_file)
+
+
+def find_md_files(root_dir):
+    md_files = []
+    for dirpath, _, filenames in os.walk(root_dir):
+        for filename in glob.glob(os.path.join(dirpath, '*.md')):
+            md_files.append(filename)
+
+    return md_files
+

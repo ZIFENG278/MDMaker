@@ -16,7 +16,12 @@ class MDExporter():
     def find_md_files(self, path):
         md_files = []
         for root, dirs, files in os.walk(self.docs_path):
+            dir_name = root[len(self.docs_path) + 1:].split('/')[0]
+            if  dir_name == "common" or dir_name == "template":
+                continue
             for file in files:
+                if file == "Home.md":
+                    continue
                 if file.endswith('.md'):
                     md_files.append(os.path.join(root, file))
         return md_files

@@ -91,7 +91,14 @@ class MDMaker():
             self.add_title = title_lists[1]
             # print(self.add_title)
         else:
-            self.add_title = ""
+            if title_lists[0] == "roobi":
+                self.add_title = "roobi"
+            else:
+                level1_pattern = r'^(#\s+)(.*)'
+                level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
+                # print(self.md_path)
+                # print(level1_title.group(2))
+                self.add_title = level1_title.group(2)
         # self.add_title = " ".join(i for i in add_title_list)
     def import_mdx(self):
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
@@ -142,10 +149,12 @@ class MDMaker():
         self.get_add_title(no_need_path=self.no_need_path)
 
         # 使用正则表达式找到所有一级标题
-        level1_pattern = r'^(#\s+)(.*)'
-        level1_matches = list(re.finditer(level1_pattern, self.content, flags=re.MULTILINE))
+        # level1_pattern = r'^(#\s+)(.*)'
+        # level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
 
-        self.get_add_title(no_need_path=self.no_need_path)
+        # level1_matches = list(re.finditer(level1_pattern, self.content, flags=re.MULTILINE))
+
+        # self.get_add_title(no_need_path=self.no_need_path)
 
         pattern = r'^(#{1,%d}\s+)(.*)' % level
         # 使用正则表达式替换匹配的标题
