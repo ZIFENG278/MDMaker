@@ -2,20 +2,26 @@ import json
 import os
 import re
 from utils.tools import read_file
-DB = {}
+import subprocess
+from core.mdexporter import MDExporter
+from collections import defaultdict
+# DB = {}
 """
 DB = {
     "HEAD": xxx
-    "xxx.md": [xxx.mdx, xxx.mdx]
+    "xxx.md": [{md: xx.md,
+                mdx:[xxx.mdx],
+                split:[0_xxx.md, 1_xxx.md]},
+                {}]
 }
 """
 
-
 class BuildDB():
     def __init__(self, docs_path):
-        self.docs_path = docs_path
+        self.docs_path = os.path.abspath(docs_path)
         self.repo_all_md_path = self.find_md_files(path=self.docs_path)
         self.db = self.read_db()
+        self.need_update_set = set()
 
     def read_db(self):
         if not os.path.exists('./json/db.json'):
@@ -44,9 +50,11 @@ class BuildDB():
                     continue
                 if file.endswith('.md'):
                     md_files.append(os.path.join(root, file))
+        # print(md_files)
         return md_files
 
     def record_mdx(self, doc_path):
+        self.db["HEAD"] = self.get_cur_head()
         content = read_file(doc_path)
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
         imports = import_pattern.findall(content)
@@ -54,6 +62,12 @@ class BuildDB():
         # print(imports)
         # print("??")
         # print(len(imports))
+
+        if "docs/" + doc_path[len(self.docs_path) + 1:] not in self.db.keys():
+            self.db["docs/" + doc_path[len(self.docs_path) + 1:]] = {
+                "md": "docs/" + doc_path[len(self.docs_path) + 1:]}
+            self.db["docs/" + doc_path[len(self.docs_path) + 1:]]["mdx"] = []
+
         if len(imports) != 0:
             for import_name, path in imports:
                 mdx_path = path.replace('\\', '')
@@ -64,23 +78,24 @@ class BuildDB():
                 component_use = component_pattern.findall(content)
                 mdx_file_path = os.path.join(os.path.dirname(doc_path), mdx_path)
                 if len(component_use) != 0:
-                    # if os.path.exists(mdx_file_path):
-                    #
-                    #     mdx_path_name = ""
-                    #     for i in mdx_path_split:
-                    #         if i == "..":
-                    #             continue
-                    #         if i.endswith('.mdx'):
-                    #             mdx_path_name += i
-                    #         else:
-                    #             mdx_path_name += (i+'/')
-                    #
-                    #     self.db[doc_path[len(self.docs_path)+1:]] = mdx_path_name
+                    if os.path.exists(mdx_file_path):
+                        self.db["docs/" + doc_path[len(self.docs_path) + 1: ]]["mdx"].append("docs/" + os.path.abspath(mdx_file_path)[len(self.docs_path)+1:])
 
+    def get_cur_head(self, git_repo_path='./data_test/docs'):
+        original_dir = os.getcwd()
+        os.chdir(git_repo_path)
+        result = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True)
+        # print(result.stdout.strip())
+        os.chdir(original_dir)
+        return result.stdout.strip()
 
 
     def forward(self):
         for i in self.repo_all_md_path:
             self.record_mdx(i)
+        exporter = MDExporter(docs_path=self.docs_path, db=self.db)
+        exporter.forward()
+        self.write_db()
+        # self.get_cur_head()
+        # self.show_db()
 
-        self.show_db()

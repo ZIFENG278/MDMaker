@@ -1,6 +1,8 @@
 from utils.tools import read_file, write_file
 import re
 import os
+import json
+
 class MdSpliter():
     def __init__(self, file_path, split_number, pre_split=False):
         self.md_path = file_path
@@ -8,6 +10,7 @@ class MdSpliter():
         self.content = read_file(self.md_path)
         self.split_content = []
         self.pre_split_bool = pre_split
+
     def extract_titles(self, sub_md_content, level=1, status="main"):
         # pattern = re.compile(r'^(##+\s+)(.*)', re.MULTILINE)
         pattern = re.compile(r'^(#{' + str(level) + r',}\s+)(.*)', re.MULTILINE)
@@ -117,16 +120,23 @@ class MdSpliter():
                     self.split_content.append(md_mata)
 
     def write_split_md(self):
+        write_file_path = []
         for index, content in enumerate(self.split_content):
             file_dir, md_name = self.md_path.rsplit('/', 1)
             md_name = "{}_{}".format(index, md_name)
             # print(file_dir)
             # print(md_name)
             write_file(content["content"], os.path.join(file_dir, md_name))
+            write_file_path.append(os.path.abspath(os.path.join(file_dir, md_name)))
 
+        return write_file_path
     def forward(self):
         self.split()
-        self.write_split_md()
+        split_path = self.write_split_md()
+
+        return split_path
+
+
 
 
 

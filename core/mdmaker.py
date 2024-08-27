@@ -137,7 +137,7 @@ class MDMaker():
                         #     self.content = self.content.replace(f'</{import_name}>', mdx_content)
 
                     else:
-                        print(f"Warning: MDX file '{mdx_file_path}' does not exist.")
+                        print(f"Warning: MDX file '{mdx_file_path}' does not exist. in {self.md_path}")
 
         # print(self.orl_content)
     def remove_sidebar(self):
