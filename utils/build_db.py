@@ -5,7 +5,7 @@ from utils.tools import read_file
 import subprocess
 from core.mdexporter import MDExporter
 from plugin.kbapi import KbApi
-# DB = {}
+
 """
 DB = {
     "HEAD": xxx
@@ -40,8 +40,6 @@ class BuildDB():
     def find_md_files(self, path):
         md_files = []
         for root, dirs, files in os.walk(self.docs_path):
-            # print(root)
-            # print(root[len(self.docs_path):])
             dir_name = root[len(self.docs_path) + 1:].split('/')[0]
             if  dir_name == "common" or dir_name == "template":
                 continue
@@ -50,17 +48,12 @@ class BuildDB():
                     continue
                 if file.endswith('.md'):
                     md_files.append(os.path.join(root, file))
-        # print(md_files)
         return md_files
 
     def record_mdx(self, doc_path):
         content = read_file(doc_path)
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
         imports = import_pattern.findall(content)
-        # print(self.content)
-        # print(imports)
-        # print("??")
-        # print(len(imports))
 
         if "docs/" + doc_path[len(self.docs_path) + 1:] not in self.db.keys():
             self.db["docs/" + doc_path[len(self.docs_path) + 1:]] = {
@@ -85,19 +78,20 @@ class BuildDB():
         original_dir = os.getcwd()
         os.chdir(git_repo_path)
         result = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True)
-        # print(result.stdout.strip())
         os.chdir(original_dir)
         return result.stdout.strip()
 
 
-    def forward(self):
+    def forward(self, api=True, show_db=False):
         self.db["HEAD"] = self.get_cur_head()
         for i in self.repo_all_md_path:
             self.record_mdx(i)
         exporter = MDExporter(docs_path=self.docs_path, db=self.db)
         exporter.forward(api_delete=False)
         self.write_db()
-        api = KbApi()
-        api.forward("radxa_docs", "瑞莎radxa文档知识库", './dist_2') # TODO
-        self.show_db()
+        if api:
+            api = KbApi()
+            api.forward("radxa_docs", "瑞莎radxa文档知识库", './dist_2') # TODO
+        if show_db:
+            self.show_db()
 

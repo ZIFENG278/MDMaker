@@ -32,7 +32,6 @@ class Updater(BuildDB):
                         for key, value in self.db.items():
                             if i in value:
                                 self.need_update_set.add(key)
-                # print(self.need_update_set)# print(result.stdout.strip())
             os.chdir(original_dir)
         return
 
@@ -41,7 +40,6 @@ class Updater(BuildDB):
         print(self.need_update_set)
         for i in self.need_update_set:
             need_update_full_path.append(os.path.join(self.docs_path[:-4], i))
-        # print(need_update_full_path)
         exporter = MDExporter(docs_path=self.docs_path, docs_list=need_update_full_path, db=self.db)
         update_lists = exporter.forward(api_delete=True)
         api = KbApi()
