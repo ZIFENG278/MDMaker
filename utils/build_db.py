@@ -4,7 +4,7 @@ import re
 from utils.tools import read_file
 import subprocess
 from core.mdexporter import MDExporter
-from collections import defaultdict
+from plugin.kbapi import KbApi
 # DB = {}
 """
 DB = {
@@ -54,7 +54,6 @@ class BuildDB():
         return md_files
 
     def record_mdx(self, doc_path):
-        self.db["HEAD"] = self.get_cur_head()
         content = read_file(doc_path)
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
         imports = import_pattern.findall(content)
@@ -67,6 +66,7 @@ class BuildDB():
             self.db["docs/" + doc_path[len(self.docs_path) + 1:]] = {
                 "md": "docs/" + doc_path[len(self.docs_path) + 1:]}
             self.db["docs/" + doc_path[len(self.docs_path) + 1:]]["mdx"] = []
+            self.db["docs/" + doc_path[len(self.docs_path) + 1:]]["split"] = []
 
         if len(imports) != 0:
             for import_name, path in imports:
@@ -91,11 +91,13 @@ class BuildDB():
 
 
     def forward(self):
+        self.db["HEAD"] = self.get_cur_head()
         for i in self.repo_all_md_path:
             self.record_mdx(i)
         exporter = MDExporter(docs_path=self.docs_path, db=self.db)
-        exporter.forward()
+        exporter.forward(api_delete=False)
         self.write_db()
-        # self.get_cur_head()
-        # self.show_db()
+        api = KbApi()
+        api.forward("radxa_docs", "瑞莎radxa文档知识库", './dist_2') # TODO
+        self.show_db()
 

@@ -1,15 +1,28 @@
+from turtledemo.forest import start
+
 from utils.tools import read_file, write_file
 import re
 import os
 import json
 
 class MDMaker():
-    def __init__(self, md_path, project_path):
+    def __init__(self, md_path, project_path, db=None):
         self.md_path = md_path
-        self.content = read_file(self.md_path)
-        self.add_title = None
-        # self.dst_path
+        self.add_title = []
         self.no_need_path = project_path
+        self.status = True
+        self.content = self.read_check_file(self.md_path)
+
+
+    def read_check_file(self, path):
+        if not os.path.exists(path):
+            print("{} have remove in repo".format(path))
+            self.status = False
+            return None
+        else:
+            return read_file(path)
+
+
     def remove_image_html(self):
         markdown_image_pattern = re.compile(r'!\[.*?\]\(.*?\)', re.MULTILINE)
         html_image_pattern = re.compile(r'<img\s+[^>]*>', re.MULTILINE)
@@ -64,7 +77,8 @@ class MDMaker():
         file_link = office_link + file_link
 
         for i in links:
-            if i[1].startswith("https"):
+            if i[1].startswith("http"):
+                # print(self.md_path)
                 continue
             elif i[1].startswith("#"):
                 pattern = re.compile(r'^(#+)(.*)', re.MULTILINE)
@@ -88,17 +102,27 @@ class MDMaker():
         lever_num = len(title_lists)
 
         if lever_num > 2:
-            self.add_title = title_lists[1]
-            # print(self.add_title)
+            product_name = title_lists[1]
+            self.add_title.append(product_name)
+
         else:
             if title_lists[0] == "roobi":
-                self.add_title = "roobi"
+                self.add_title.append("roobi")
             else:
-                level1_pattern = r'^(#\s+)(.*)'
-                level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
-                # print(self.md_path)
-                # print(level1_title.group(2))
-                self.add_title = level1_title.group(2)
+                self.add_title.append('')
+
+        level1_pattern = r'^(#\s+)(.*)'
+        level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
+        # print(self.md_path)
+        # print(self.content)
+        # print(level1_title)
+        # print(level1_title.group(0))
+        # print(level1_title.group(1))
+        # print(level1_title.group(2))
+        if level1_title is not None:
+            self.add_title.append(level1_title.group(2))
+        else:
+            self.add_title.append('')
         # self.add_title = " ".join(i for i in add_title_list)
     def import_mdx(self):
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
@@ -155,12 +179,19 @@ class MDMaker():
         # level1_matches = list(re.finditer(level1_pattern, self.content, flags=re.MULTILINE))
 
         # self.get_add_title(no_need_path=self.no_need_path)
+        level1_pattern = r'^(#\s+)(.*)'
+        self.content = re.sub(
+            level1_pattern,
+            lambda m: f'{m.group(1)}{self.add_title[0]} {m.group(2)}',
+            self.content,
+            flags=re.MULTILINE
+        )
 
-        pattern = r'^(#{1,%d}\s+)(.*)' % level
+        pattern = r'^(#{2,%d}\s+)(.*)' % level
         # 使用正则表达式替换匹配的标题
         self.content = re.sub(
             pattern,
-            lambda m: f'{m.group(1)}{self.add_title} {m.group(2)}',
+            lambda m: f'{m.group(1)}{self.add_title[0]} {self.add_title[1]} {m.group(2)}',
             self.content,
             flags=re.MULTILINE
         )
@@ -213,16 +244,19 @@ class MDMaker():
 
 
     def forward(self):
-        # print(self.md_path)
-        self.remove_sidebar()
-        self.import_mdx()
-        self.remove_image_html()
-        self.insert_title()
-        self.recover_link()
-        result_log = self.write_md()
-        # print(self.content)
+        if self.status:
+            # print(self.md_path)
+            self.remove_sidebar()
+            self.import_mdx()
+            self.remove_image_html()
+            self.insert_title()
+            self.recover_link()
+            result_log = self.write_md()
+            # print(self.content)
 
-        return result_log
+            return result_log
+        else:
+            return "ERROR", self.md_path
 
         # if self.find_table():
         #     self.write_md()

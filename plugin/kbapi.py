@@ -2,27 +2,23 @@ import requests
 import os
 
 class KbApi():
-    def __init__(self, upload_files_path):
+    def __init__(self,):
         self.headers = {"accept": "application/json"}
-        self.upload_files_path = upload_files_path
-    def api_upload_files(self, kb_name):
-        if isinstance(self.upload_files_path, str):
-            dist2_dir = os.listdir(self.upload_files_path)
-            product_list = []
-            for i in dist2_dir:
-                if os.path.isdir(os.path.join('./dist_2', i)):
-                    product_list.append(i)
-                else:
-                    self.upload_docs(kb_name, os.path.join(self.upload_files_path, i))
-
-            for i in product_list:
-                files_list = os.listdir(os.path.join('./dist_2', i))
-                for file in files_list:
-                    self.upload_docs(kb_name, os.path.join('./dist_2', i, file))
 
 
-        elif isinstance(self.upload_files_path, list):
-            for i in self.upload_files_path:
+    def api_upload_files(self, kb_name, upload_files_path):
+        if isinstance(upload_files_path, str):
+            count = 0
+            for root, dirs, files in os.walk(upload_files_path):
+                for file in files:
+                    if file.endswith('.md'):
+                            md_file = os.path.join(root, file)
+                            self.upload_docs(kb_name, md_file)
+                            count += 1
+            print(count)
+
+        elif isinstance(upload_files_path, list):
+            for i in upload_files_path:
                 file_path = os.path.abspath(i)
                 self.upload_docs(kb_name, file_path)
 
@@ -83,7 +79,7 @@ class KbApi():
         data = {
             "to_vector_store": "true",
             "override": "true",
-            "not_refresh_vs_cache": "false",
+            "not_refresh_vs_cache": "true",
             "chunk_size": chunk_size,
             "chunk_overlap": "150",
             "zh_title_enhance": "false",
@@ -123,16 +119,37 @@ class KbApi():
             print(f"请求失败，状态码: {response.status_code}")
             print(response.json())
 
-    def forward(self, kb_name, kb_info, embedding_model="bge-large-zh-v1.5", vector_store_type="faiss"):
+    def delete_docs(self, kb_name, delete_files_path):
+        url = "http://localhost:7861/knowledge_base/delete_docs"
+
+        delete_docs_list = []
+        for i in delete_files_path:
+            file_name = i.rsplit('/', 1)[-1]
+            delete_docs_list.append(str(file_name))
+
+        data = {
+            "knowledge_base_name": kb_name,
+            "file_names": delete_docs_list,
+            "delete_content": False,
+            "not_refresh_vs_cache": False
+        }
+
+        response = requests.post(url, headers=self.headers, json=data)
+
+        if response.status_code == 200:
+            data = response.json()
+            # print(data)
+        else:
+            print(f"请求失败，状态码: {response.status_code}")
+            print(response.json())  # 打印详细错误信息
+
+    def forward(self, kb_name, kb_info, upload_files_path, embedding_model="bge-base-zh-v1.5", vector_store_type="faiss"):
         response = self.create_knowledge_base(kb_name, kb_info, embedding_model, vector_store_type)
         if response.status_code != 200:
             print(response.json())
             return
         self.update_info(kb_name, kb_info)
-        self.api_upload_files(kb_name)
-
-    def updata_vector(self, kb_name):
-        self.api_upload_files(kb_name)
+        self.api_upload_files(kb_name, upload_files_path)
 
 
     def test_api(self):
@@ -141,6 +158,7 @@ class KbApi():
         self.update_info("test2", "test_api")
         self.upload_docs("test_api", "/home/zifeng/Job/git_clone/MDMaker/dist/zero/zero/radxa-os/1_zero_usbnet.md")
         self.delete_knowledge_base("test_api")
+
 
 
 

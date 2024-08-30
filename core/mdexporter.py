@@ -1,8 +1,11 @@
 import os
 import shutil
 import json
+from os.path import split, exists
+
 from core.mdmaker import MDMaker
 from core.mdspliter import MdSpliter
+from plugin.kbapi import KbApi
 from utils.tools import copy_md_files_with_numeric_prefix
 
 
@@ -14,7 +17,8 @@ class MDExporter():
         self.repo_all_md_path = self.find_md_files(path=self.docs_path)
         self.dist_all_md_path = self.find_md_files(path="./dist")
         self.status_dict = {"WARNING": [],
-                            "ACCEPT": []}
+                            "ACCEPT": [],
+                            "ERROR": []}
 
         self.split_path = {}
 
@@ -70,33 +74,59 @@ class MDExporter():
         for i in product_list:
             copy_md_files_with_numeric_prefix(os.path.join('./dist', i), os.path.join('./dist_2', i))
 
-    def copy_to_dist2(self):
-        dist_2_files = []
+    def copy_to_dist2(self, api_delete=False):
+        update_lists = []
         for md_path, mdx_path_list in self.split_path.items():
+            split_docs_path = md_path.split('/')[6:]
+            split_docs_path[-1] = split_docs_path[-1].split('_', 1)[-1]
+            if api_delete and self.db[os.path.join("docs",*split_docs_path)]["split"] != []:
+                for i in self.db[os.path.join("docs",*split_docs_path)]["split"]:
+                    os.remove(i)
+                api = KbApi()
+                api.delete_docs(kb_name="radxa_docs", delete_files_path=self.db[os.path.join("docs",*split_docs_path)]["split"])
+
             dst_mdx_files = []
             for i in mdx_path_list:
                 path_split = i.split('/')
-                path_split[path_split.index('dist')] = 'dist2'
+                path_split[path_split.index('dist')] = 'dist_2'
                 dst_path = os.path.join("/", *path_split)
                 if not os.path.exists(os.path.dirname(dst_path)):
                     os.makedirs(os.path.dirname(dst_path))
                 shutil.copy(i, dst_path)
                 dst_mdx_files.append(dst_path)
-
-            split_docs_path = md_path.split('/')[6:]
-            split_docs_path[-1] = split_docs_path[-1].split('_', 1)[-1]
-            # try:
-            self.db[os.path.join("docs",*split_docs_path)]["split"] = dst_mdx_files
-            # except Exception as e:
-            #     with open('./json/db.json', 'w') as f:
-            #         json.dump(self.db, f, ensure_ascii=False)
+            if self.db is not None:
+                self.db[os.path.join("docs",*split_docs_path)]["split"] = dst_mdx_files
+                for split in dst_mdx_files:
+                    update_lists.append(split)
 
 
-    def forward(self):
+        return update_lists
+
+    def repo_delete(self, api_delete):
+        if api_delete:
+            for i in self.status_dict["ERROR"]:
+                split_docs_path = i.split('/')[7:]
+                # print(split_docs_path)
+                exists_split_md = self.db[os.path.join(*split_docs_path)]["split"]
+                for j in exists_split_md:
+                    os.remove(j)
+                api = KbApi()
+                api.delete_docs(kb_name="radxa_docs",
+                                delete_files_path=self.db[os.path.join(*split_docs_path)]["split"])
+
+                del self.db[os.path.join(*split_docs_path)]
+
+        else:
+            pass
+
+
+    def forward(self, api_delete=False):
         self.mdmaker_loop()
         self.mdspliter_loop()
-        # print(self.split_path)
-        self.copy_to_dist2()
+        update_lists = self.copy_to_dist2(api_delete)
+        self.repo_delete(api_delete)
+
+        return update_lists
 
 
 
