@@ -1,3 +1,4 @@
+from itertools import product
 from turtledemo.forest import start
 
 from utils.tools import read_file, write_file
@@ -74,23 +75,27 @@ class MDMaker():
         links = link_pattern.findall(self.content)
         office_link = "https://docs.radxa.com/"
         file_link = self.md_path[len(self.no_need_path) + 1:-3]
+        if file_link.rsplit('/', 1)[-1] == "README":
+            file_link = file_link.rsplit('/', 1)[0]
         file_link = office_link + file_link
 
         for i in links:
             if i[1].startswith("http"):
-                # print(self.md_path)
                 continue
             elif i[1].startswith("#"):
                 pattern = re.compile(r'^(#+)(.*)', re.MULTILINE)
                 matches = pattern.findall(i[1])
                 sub_title = matches[0][-1]
                 http_link = "{}#{}".format(file_link, sub_title)
-                self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
+                # print(http_link)
+            elif i[1].startswith('/'):
+                http_link = office_link + i[1][1:]
+                # print(http_link)
             else:
                 http_link = "{}/../{}".format(file_link, i[1])
-                self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
-
-                # Relative Path
+                # print(file_link)
+                # print(http_link)
+            self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
 
 
     def get_add_title(self, no_need_path="/home/zifeng/Job/git_clone/docs-template/contents/docs/"):
@@ -104,7 +109,6 @@ class MDMaker():
         if lever_num > 2:
             product_name = title_lists[1]
             self.add_title.append(product_name)
-
         else:
             if title_lists[0] == "roobi":
                 self.add_title.append("roobi")
@@ -113,24 +117,16 @@ class MDMaker():
 
         level1_pattern = r'^(#\s+)(.*)'
         level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
-        # print(self.md_path)
-        # print(self.content)
-        # print(level1_title)
-        # print(level1_title.group(0))
-        # print(level1_title.group(1))
-        # print(level1_title.group(2))
+
         if level1_title is not None:
             self.add_title.append(level1_title.group(2))
         else:
             self.add_title.append('')
-        # self.add_title = " ".join(i for i in add_title_list)
+
     def import_mdx(self):
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
         imports = import_pattern.findall(self.content)
-        # print(self.content)
-        # print(imports)
-        # print("??")
-        # print(len(imports))
+
         if len(imports) != 0:
             for import_name, path in imports:
                 mdx_path = path.replace('\\', '')
@@ -142,8 +138,6 @@ class MDMaker():
                 component_use = component_pattern.findall(self.content)
                 # component_use2 = component_pattern2.findall(self.content)
                 mdx_file_path = os.path.join(os.path.dirname(self.md_path), mdx_path)
-                # print(component_use)
-                # print(component_use2)
 
                 if len(component_use) != 0:
                     if os.path.exists(mdx_file_path):
@@ -258,19 +252,4 @@ class MDMaker():
         else:
             return "ERROR", self.md_path
 
-        # if self.find_table():
-        #     self.write_md()
-        #     print("WARNING: {} with table".format(self.md_path))
-        #     return self.
-        # else:
-
-
-
-
-
-
-
-# a = MDMaker('/home/zifeng/Job/git_clone/docs-template/contents/docs/sophon/airbox/casaos/casaos_app_build.md')
-# a.forward()
-# print(a.orl_content)
 
