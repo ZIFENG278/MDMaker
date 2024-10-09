@@ -33,6 +33,17 @@ def copy_md_files_with_numeric_prefix(src_dir, dest_dir):
                     shutil.copy(src_file, dest_file)
 
 
+def find_md_files_with_numeric_prefix(path):
+    all_numeric_md_path = []
+    for root, dirs, files in os.walk(os.path.normpath(path)):
+        for file in files:
+            if file.endswith('.md'):
+                if re.match(r'^\d+', file):
+                    all_numeric_md_path.append(os.path.join(root, file))
+
+
+
+
 def find_md_files(root_dir):
     md_files = []
     for dirpath, _, filenames in os.walk(root_dir):

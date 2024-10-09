@@ -1,3 +1,4 @@
 from utils.build_db import BuildDB
-a = BuildDB("/mnt/sdb1/git_clone/MDMaker/data_test/docs/docs")
-a.forward()
+from setting import *
+a = BuildDB(repo_docs_path)
+a.forward(api=True, show_db=False)

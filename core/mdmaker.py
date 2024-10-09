@@ -1,4 +1,5 @@
 from itertools import product
+from pprint import pformat
 from turtledemo.forest import start
 
 from utils.tools import read_file, write_file
@@ -7,17 +8,17 @@ import os
 import json
 
 class MDMaker():
-    def __init__(self, md_path, project_path, db=None):
+    def __init__(self, md_path, repo_path, db=None):
         self.md_path = md_path
         self.add_title = []
-        self.no_need_path = project_path
         self.status = True
+        self.repo_path = repo_path
         self.content = self.read_check_file(self.md_path)
 
 
     def read_check_file(self, path):
         if not os.path.exists(path):
-            print("{} have remove in repo".format(path))
+            print("WARNING: {} have remove in repo".format(path))
             self.status = False
             return None
         else:
@@ -74,10 +75,12 @@ class MDMaker():
         link_pattern = re.compile(r'\[\s*([^\]]*)\s*\]\(\s*([^\)]*)\s*\)', re.IGNORECASE)
         links = link_pattern.findall(self.content)
         office_link = "https://docs.radxa.com/"
-        file_link = self.md_path[len(self.no_need_path) + 1:-3]
+        over_str = "repo_docs/docs/docs/"
+        file_link = self.md_path[len(over_str):-3]
         if file_link.rsplit('/', 1)[-1] == "README":
             file_link = file_link.rsplit('/', 1)[0]
         file_link = office_link + file_link
+        # print(file_link)
 
         for i in links:
             if i[1].startswith("http"):
@@ -98,22 +101,27 @@ class MDMaker():
             self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
 
 
-    def get_add_title(self, no_need_path="/home/zifeng/Job/git_clone/docs-template/contents/docs/"):
-        file_path = os.path.abspath(self.md_path)
-        if file_path.startswith(no_need_path):
-            file_path = file_path[len(no_need_path) + 1:]
+    def get_add_title(self):
+        file_path = os.path.normpath(self.md_path)
+        # if file_path.startswith(no_need_path):
+        #     file_path = file_path[len(no_need_path) + 1:]
         # 判断层级数来确定需要的标题
-        title_lists = file_path.split('/')
+        title_lists = file_path.split('/')[2:]
+        # print(file_path)
+        print(title_lists)
         lever_num = len(title_lists)
 
-        if lever_num > 2:
+        if lever_num > 3:
+            product_name = title_lists[2]
+            self.add_title.append(product_name)
+        elif lever_num <= 2:
+            self.add_title.append('')
+        else:
             product_name = title_lists[1]
             self.add_title.append(product_name)
-        else:
-            if title_lists[0] == "roobi":
-                self.add_title.append("roobi")
-            else:
-                self.add_title.append('')
+
+        print(self.add_title)
+
 
         level1_pattern = r'^(#\s+)(.*)'
         level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
@@ -122,6 +130,7 @@ class MDMaker():
             self.add_title.append(level1_title.group(2))
         else:
             self.add_title.append('')
+        # print(self.add_title)
 
     def import_mdx(self):
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
@@ -140,7 +149,7 @@ class MDMaker():
                 mdx_file_path = os.path.join(os.path.dirname(self.md_path), mdx_path)
 
                 if len(component_use) != 0:
-                    if os.path.exists(mdx_file_path):
+                    if os.path.exists(os.path.normpath(mdx_file_path)):
                         # print("find")
                         mdx_content = read_file(mdx_file_path)
                         # print(f"<{import_name}{component_use[0]}/>")
@@ -164,15 +173,8 @@ class MDMaker():
         # print(self.content)
 
     def insert_title(self, level=5):
-        self.get_add_title(no_need_path=self.no_need_path)
+        self.get_add_title()
 
-        # 使用正则表达式找到所有一级标题
-        # level1_pattern = r'^(#\s+)(.*)'
-        # level1_title = re.search(level1_pattern, self.content, flags=re.MULTILINE)
-
-        # level1_matches = list(re.finditer(level1_pattern, self.content, flags=re.MULTILINE))
-
-        # self.get_add_title(no_need_path=self.no_need_path)
         level1_pattern = r'^(#\s+)(.*)'
         self.content = re.sub(
             level1_pattern,
@@ -198,41 +200,39 @@ class MDMaker():
         return bool(table_pattern.search(self.content)) or bool(wrong_format.search(self.content))
 
     def write_md(self):
-        file_path = os.path.abspath(self.md_path)
-        # print(file_path)
-        file_path = file_path[len(self.no_need_path) + 1:]
-
-        if "/" not in file_path:
-            dir_name = './'
-            file_name = file_path
+        file_splits = self.md_path.split('/')
+        if len(file_splits) <= 4:
             product_name = ''
         else:
-            dir_name = file_path.rsplit('/', 1)[0]
-            file_path_split = file_path.split('/')
-            if len(file_path_split) > 2:
-                product_name = file_path_split[1] + "_"
-                file_name = file_path_split[-1]
-            else:
-                product_name = file_path_split[0] + "_"
-                file_name = file_path_split[-1]
+            product_name = file_splits[3]
 
+        if product_name != '':
+            file_name = product_name + '_'  + file_splits[-1]
+        else:
+            file_name = file_splits[-1]
+        # print(file_name)
+        if os.path.join(*file_splits[:-1]) == self.repo_path:
+            dst_path = os.path.join('', file_name)
+        else:
+            dst_path = os.path.join(*file_splits[3:-1], file_name)
+        # print("ZZZ")
+        # print(dst_path)
 
-        dst_dir_path = os.path.join("./dist/", dir_name)
-        # print(dst_dir_path)
-        # print(os.path.join(dst_dir_path, "{}_{}".format(product_name, file_name)))
+        dst_file_path = os.path.join("./dist/", dst_path)
+        dst_dir_path = os.path.join(*dst_file_path.split('/')[:-1])
+
 
         if not os.path.exists(dst_dir_path):
             os.makedirs(dst_dir_path, exist_ok=True)
-        # print(os.path.join(dst_dir_path, file_name))
-        dst_path = os.path.join(dst_dir_path, "{}{}".format(product_name, file_name))
+
         if self.find_table():
             # print("WARNING: {} with table".format(self.md_path))
             self.remove_table()
-            write_file(self.content, dst_path)
-            return "WARNING", os.path.abspath(dst_path)
+            write_file(self.content, dst_file_path)
+            return "WARNING", os.path.normpath(dst_file_path)
         else:
-            write_file(self.content, dst_path)
-            return "ACCEPT", os.path.abspath(dst_path)
+            write_file(self.content, dst_file_path)
+            return "ACCEPT", os.path.normpath(dst_file_path)
 
 
 

@@ -15,11 +15,11 @@ class KbApi():
                             md_file = os.path.join(root, file)
                             self.upload_docs(kb_name, md_file)
                             count += 1
-            print(count)
+            print("upload {} files".format(count))
 
         elif isinstance(upload_files_path, list):
             for i in upload_files_path:
-                file_path = os.path.abspath(i)
+                file_path = os.path.normpath(i)
                 self.upload_docs(kb_name, file_path)
 
     def create_knowledge_base(self, kb_name, kb_info=None, embedding_model="bge-large-zh-v1.5", vector_store_type="faiss"):
@@ -70,6 +70,18 @@ class KbApi():
             print(f"请求失败，状态码: {response.status_code}")
             print(response.json())
 
+    def list_knowledge_base_files(self, base_name):
+        url = "http://localhost:7861/knowledge_base/list_files?knowledge_base_name={}".format(base_name)
+
+        response = requests.get(url, headers=self.headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            print(len(data['data']))
+            return len(data['data'])
+        else:
+            print(f"请求失败，状态码: {response.status_code}")
+            print(response.json())
 
     def upload_docs(self, kb_name, file_path, chunk_size="1000"):
         file_path_split = file_path.rsplit('/', 1)
@@ -130,8 +142,8 @@ class KbApi():
         data = {
             "knowledge_base_name": kb_name,
             "file_names": delete_docs_list,
-            "delete_content": False,
-            "not_refresh_vs_cache": False
+            "delete_content": "true",
+            "not_refresh_vs_cache": "true"
         }
 
         response = requests.post(url, headers=self.headers, json=data)
