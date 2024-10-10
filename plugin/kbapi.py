@@ -1,10 +1,10 @@
 import requests
 import os
-
+from utils.tools import recover_ol_md_path
 class KbApi():
-    def __init__(self,):
+    def __init__(self,db):
         self.headers = {"accept": "application/json"}
-
+        self.db = db
 
     def api_upload_files(self, kb_name, upload_files_path):
         if isinstance(upload_files_path, str):
@@ -109,6 +109,9 @@ class KbApi():
         if response.status_code == 200:
             data = response.json()
             # print(data)
+            ol_md_name = recover_ol_md_path(file_path)
+            self.db["content"][ol_md_name]["split"][file_path] = True
+            print("{} upload".format(file_path))
         else:
             print(f"请求失败，状态码: {response.status_code}")
             print(response.json())
@@ -150,6 +153,8 @@ class KbApi():
 
         if response.status_code == 200:
             data = response.json()
+            print("{} remote delete {}\n".format(kb_name, delete_docs_list))
+
             # print(data)
         else:
             print(f"请求失败，状态码: {response.status_code}")

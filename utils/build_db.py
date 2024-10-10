@@ -33,10 +33,12 @@ class BuildDB():
         :return:
         """
         if not os.path.exists('./json/db.json'):
+            print("create new db")
             return {"base": {},
                     "content":{}
                     }
         else:
+            print("use exist db")
             with open('./json/db.json', 'r') as f:
                 return json.load(f)
 
@@ -85,12 +87,13 @@ class BuildDB():
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
         imports = import_pattern.findall(content)
 
-        if doc_path not in self.db: # 初始化数据
+        if doc_path not in self.db["content"]:
+            # print(doc_path)# 初始化数据
             self.db["content"][doc_path] = {
                 "md": doc_path,
                 "mdx": [],
-                "split": [],
-                "remote": False
+                "split": {},
+                # "remote": False
             }
 
         if len(imports) != 0:
@@ -120,6 +123,7 @@ class BuildDB():
         count = 0
         for i in self.db["content"]:
             # print(i)
+            # print(len(self.db["content"][i]["split"]))
             count += len(self.db["content"][i]["split"])
         self.db["base"]["md_split_number"] = count
 
@@ -135,5 +139,9 @@ class BuildDB():
         exporter.forward(api_delete=False)
         self.count_all_split_md()
         self.write_db()
-
+        # if api:
+        #     api = KbApi()
+        #     api.forward("radxa_docs", "瑞莎radxa文档知识库", './dist_2') # TODO
+        # if show_db:
+        # self.show_db()
 

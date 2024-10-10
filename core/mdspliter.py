@@ -13,13 +13,20 @@ class MdSpliter():
         self.pre_split_bool = pre_split
 
     def recover_ol_md_path(self):
+        # print(self.md_path)
         md_path_split = self.md_path.split('/')[1:]
         # print(md_path_split)
         if len(md_path_split) == 1:
             md_dir = ''
         else:
             md_dir = os.path.join(*md_path_split[:-1])
-        ol_md_file_name = md_path_split[-1].split('_', 1)[-1]
+        dir_list = md_path_split[:-1]
+
+        md_file_name_list = md_path_split[-1].split('_')
+        for i in range(len(dir_list)):
+            md_file_name_list.pop(0)
+
+        ol_md_file_name = ('_').join(md_file_name_list)
         # print(os.path.join("repo_docs/docs/docs", md_dir, ol_md_file_name))
         return os.path.join("repo_docs/docs/docs", md_dir, ol_md_file_name)
 

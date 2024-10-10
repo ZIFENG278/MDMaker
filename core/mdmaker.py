@@ -1,7 +1,3 @@
-from itertools import product
-from pprint import pformat
-from turtledemo.forest import start
-
 from utils.tools import read_file, write_file
 import re
 import os
@@ -108,7 +104,7 @@ class MDMaker():
         # 判断层级数来确定需要的标题
         title_lists = file_path.split('/')[2:]
         # print(file_path)
-        print(title_lists)
+        # print(title_lists)
         lever_num = len(title_lists)
 
         if lever_num > 3:
@@ -120,7 +116,7 @@ class MDMaker():
             product_name = title_lists[1]
             self.add_title.append(product_name)
 
-        print(self.add_title)
+        # print(self.add_title)
 
 
         level1_pattern = r'^(#\s+)(.*)'
@@ -201,21 +197,16 @@ class MDMaker():
 
     def write_md(self):
         file_splits = self.md_path.split('/')
-        if len(file_splits) <= 4:
-            product_name = ''
-        else:
-            product_name = file_splits[3]
+        # print(file_splits)
 
-        if product_name != '':
-            file_name = product_name + '_'  + file_splits[-1]
-        else:
-            file_name = file_splits[-1]
-        # print(file_name)
+        file_name = "_".join(file_splits[3:])
+
         if os.path.join(*file_splits[:-1]) == self.repo_path:
             dst_path = os.path.join('', file_name)
         else:
             dst_path = os.path.join(*file_splits[3:-1], file_name)
         # print("ZZZ")
+        # print(file_name)
         # print(dst_path)
 
         dst_file_path = os.path.join("./dist/", dst_path)

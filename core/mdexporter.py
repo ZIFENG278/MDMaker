@@ -68,8 +68,8 @@ class MDExporter():
             # print(split_path)
             # print(md_path)
             # print("==============================")
-
-            self.db["content"][md_path]["split"] = split_path
+            for i in split_path:
+                self.db["content"][md_path]["split"][i] = False
 
         for i in self.status_dict["WARNING"]:
             # print("WARNING:table {}".format(i))
@@ -77,7 +77,8 @@ class MDExporter():
             split_path, md_path = mdspliter.forward()
             # print(split_path)
             # print(md_path)
-            self.db["content"][md_path]["split"] = split_path
+            for i in split_path:
+                self.db["content"][md_path]["split"][i] = False
 
 
     # def copy_dist(self):
@@ -131,14 +132,14 @@ class MDExporter():
             for i in self.status_dict["ERROR"]:
                 split_docs_path = i.split('/')[7:]
                 # print(split_docs_path)
-                exists_split_md = self.db[os.path.join(*split_docs_path)]["split"]
+                exists_split_md = self.db["content"][os.path.join(*split_docs_path)]["split"]
                 for j in exists_split_md:
                     os.remove(j)
                 api = KbApi()
                 api.delete_docs(kb_name="radxa_docs",
-                                delete_files_path=self.db[os.path.join(*split_docs_path)]["split"])
+                                delete_files_path=self.db["content"][os.path.join(*split_docs_path)]["split"])
 
-                del self.db[os.path.join(*split_docs_path)]
+                del self.db["content"][os.path.join(*split_docs_path)]
 
         else:
             pass

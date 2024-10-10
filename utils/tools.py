@@ -52,3 +52,25 @@ def find_md_files(root_dir):
 
     return md_files
 
+
+def recover_ol_md_path(path):
+    # print(path)
+    md_path_split = path.split('/')[1:]
+    # print(md_path_split)
+    if len(md_path_split) == 1:
+        md_dir = ''
+        len_dir = len(md_path_split[:-1]) + 1
+
+    else:
+        md_dir = os.path.join(*md_path_split[:-1])
+        len_dir = len(md_path_split[:-1]) + 1
+
+    md_file_name_list = md_path_split[-1].split('_')
+    for i in range(len_dir):
+        md_file_name_list.pop(0)
+
+    ol_md_file_name = ('_').join(md_file_name_list)
+    # print(os.path.join("repo_docs/docs/docs", md_dir, ol_md_file_name))
+
+    return os.path.join("repo_docs/docs/docs", md_dir, ol_md_file_name)
+
