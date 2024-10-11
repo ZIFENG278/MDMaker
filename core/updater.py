@@ -76,29 +76,27 @@ class Updater(BuildDB):
                         os.remove(os.path.join(*ol_dir_path,ol_file_name))
                         break
                     except:
-                        print("{} not exist".format(os.path.join(*ol_dir_path,ol_file_name)))
+                        print("WARNING: delete: {} not exist".format(os.path.join(*ol_dir_path,ol_file_name)))
                         break
                 for j in self.db["content"][md_path]["split"]:
                     try:
                         os.remove(j)
                     except:
-                        print("{} not exist".format(j))
+                        print("WARNING: delete: {} not exist".format(j))
 
 
                 del self.db["content"][md_path]
 
 
     def update(self):
-        for i in self.need_update_set:
-            # print(i)
-            if os.path.exists(os.path.join(self.docs_path, i)):
-                self.record_mdx(os.path.join(self.docs_path, i))
         need_update_full_path = []
-        # print(self.need_update_set)
         for i in self.need_update_set:
-            # print(os.path.join(self.docs_path[:-4], i))
-            if os.path.exists(os.path.join(self.docs_path, i)):
-                need_update_full_path.append(os.path.join(self.docs_path, i))
+            repo_md_path = os.path.join(self.docs_path, i)
+            if os.path.exists(repo_md_path):
+                self.record_mdx(repo_md_path)
+                need_update_full_path.append(repo_md_path)
+
+        print(len(need_update_full_path))
         exporter = MDExporter(docs_path=self.docs_path, docs_list=need_update_full_path, db=self.db)
         update_lists = exporter.forward(api_delete=True)
         # api = KbApi()
@@ -119,12 +117,10 @@ class Updater(BuildDB):
     def api_update(self):
         api = KbApi(db=self.db)
         upload_file_list = []
-        self.show_db()
         for i in self.db["content"]:
             for md_split_name, remote_status in self.db["content"][i]["split"].items():
-                print(type(remote_status))
-                print(md_split_name, remote_status)
                 if not remote_status:
+                    # print(md_split_name, remote_status)
                     upload_file_list.append(md_split_name)
         api.api_upload_files(kb_name="radxa_docs_2", upload_files_path=upload_file_list)
 
@@ -136,4 +132,5 @@ class Updater(BuildDB):
         self.api_update()
         self.db["base"]["HEAD"] = self.get_cur_head(self.docs_path)
         self.count_all_split_md()
+        # self.show_db()
         self.write_db()

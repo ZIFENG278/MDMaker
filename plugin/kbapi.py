@@ -1,6 +1,8 @@
 import requests
 import os
 from utils.tools import recover_ol_md_path
+from tqdm import tqdm
+
 class KbApi():
     def __init__(self,db):
         self.headers = {"accept": "application/json"}
@@ -8,6 +10,7 @@ class KbApi():
 
     def api_upload_files(self, kb_name, upload_files_path):
         if isinstance(upload_files_path, str):
+            # 通过文件夹str搜md, 现在已经废弃
             count = 0
             for root, dirs, files in os.walk(upload_files_path):
                 for file in files:
@@ -18,9 +21,11 @@ class KbApi():
             print("upload {} files".format(count))
 
         elif isinstance(upload_files_path, list):
+            tqdm_tool = tqdm(total=len(upload_files_path))
             for i in upload_files_path:
                 file_path = os.path.normpath(i)
                 self.upload_docs(kb_name, file_path)
+                tqdm_tool.update(1)
 
     def create_knowledge_base(self, kb_name, kb_info=None, embedding_model="bge-large-zh-v1.5", vector_store_type="faiss"):
         url = "http://localhost:7861/knowledge_base/create_knowledge_base"
@@ -111,7 +116,7 @@ class KbApi():
             # print(data)
             ol_md_name = recover_ol_md_path(file_path)
             self.db["content"][ol_md_name]["split"][file_path] = True
-            print("{} upload".format(file_path))
+            # print("{} upload".format(file_path))
         else:
             print(f"请求失败，状态码: {response.status_code}")
             print(response.json())

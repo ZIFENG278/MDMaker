@@ -50,7 +50,11 @@ class MDExporter():
 
     def mdmaker_loop(self):
         # count = 0
-        for i in self.repo_all_md_path:
+        if self.docs_list is not None:
+            need_loop_list = self.docs_list
+        else:
+            need_loop_list = self.repo_all_md_path
+        for i in need_loop_list:
             mdmaker = MDMaker(i, repo_path=self.docs_path)
             result_status, result_log = mdmaker.forward()
             self.status_dict[result_status].append(result_log)

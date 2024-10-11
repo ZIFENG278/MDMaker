@@ -134,7 +134,6 @@ class BuildDB():
         self.db["base"]["md_number"] = self.md_num
         for i in self.repo_all_md_path:
             self.record_mdx(i)
-        # self.show_db()
         exporter = MDExporter(docs_path=self.docs_path, db=self.db)
         exporter.forward(api_delete=False)
         self.count_all_split_md()
@@ -142,6 +141,6 @@ class BuildDB():
         # if api:
         #     api = KbApi()
         #     api.forward("radxa_docs", "瑞莎radxa文档知识库", './dist_2') # TODO
-        # if show_db:
-        # self.show_db()
+        if show_db:
+            self.show_db()
 
