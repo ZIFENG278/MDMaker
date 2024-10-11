@@ -55,8 +55,9 @@ class Updater(BuildDB):
                             for key, value in self.db["content"].items():
                                 if key == "HEAD":
                                     continue
-                                if split_status[1] in value["mdx"]:
-                                    self.need_update_set.add(key) ## 这里存在 mdx, 但是已经更换母 md 的情况，需要在数据库中，处理空索引
+                                if os.path.join(self.docs_path, split_status[1]) in value["mdx"]:
+                                    zh_docs_path = os.path.join(*key.split("/")[2:])
+                                    self.need_update_set.add(zh_docs_path) ## 这里存在 mdx, 但是已经更换母 md 的情况，需要在数据库中，处理空索引
                         ## 暂时不考虑 D 情况，无耦合
             os.chdir(original_dir)
         return
@@ -64,7 +65,7 @@ class Updater(BuildDB):
     def delete_useless(self):
         api = KbApi(self.db)
         for i in self.need_delete_set:
-            print(i)
+            # print(i)
             md_path = os.path.join(self.docs_path ,i)
             if  md_path in self.db["content"]:
                 api.delete_docs(kb_name="radxa_docs_2", delete_files_path=self.db["content"][md_path]["split"])
@@ -95,6 +96,8 @@ class Updater(BuildDB):
             if os.path.exists(repo_md_path):
                 self.record_mdx(repo_md_path)
                 need_update_full_path.append(repo_md_path)
+            else:
+                print("WARNING: {} do not exist, please go confirm".format(repo_md_path))
 
         print(len(need_update_full_path))
         exporter = MDExporter(docs_path=self.docs_path, docs_list=need_update_full_path, db=self.db)
