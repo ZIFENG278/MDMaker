@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from utils.tools import read_file
+from utils.tools import get_cur_head, read_file, git_clone
 import subprocess
 from core.mdexporter import MDExporter
 
@@ -21,7 +21,7 @@ DB = {
 
 class BuildDB():
     def __init__(self, docs_path):
-        self.docs_path = os.path.normpath(docs_path) # "./repo_docs/docs"
+        self.docs_path = os.path.normpath(docs_path) # "./repo_docs"
         self.zh_docs_path = os.path.join(self.docs_path, "docs")
         self.md_num = None
         self.repo_all_md_path = None
@@ -43,6 +43,8 @@ class BuildDB():
                 return json.load(f)
 
     def write_db(self):
+        if not os.path.exists('./json'):
+            os.makedirs('./json', exist_ok=True)
         with open('./json/db.json', 'w') as f:
             json.dump(self.db, f, ensure_ascii=False)
 
@@ -60,7 +62,7 @@ class BuildDB():
             if root == self.zh_docs_path:
                 product_series = None
             else:
-                product_series = root.split('/')[3]
+                product_series = root.split('/')[2]
 
             if product_series == "common" or product_series == "template":
                 continue
@@ -110,12 +112,7 @@ class BuildDB():
                     if os.path.exists(mdx_file_path):
                         self.db["content"][doc_path]["mdx"].append(os.path.normpath(mdx_file_path))
 
-    def get_cur_head(self, git_repo_path):
-        original_dir = os.getcwd()
-        os.chdir(git_repo_path)
-        result = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True)
-        os.chdir(original_dir)
-        return result.stdout.strip()
+
 
 
 
@@ -129,13 +126,18 @@ class BuildDB():
 
 
     def forward(self, api=True, show_db=False):
-        self.db["base"]["HEAD"] = self.get_cur_head(self.docs_path)
+        if not os.path.exists(self.docs_path):
+            git_result = git_clone(dest_dir=self.docs_path)
+            if not git_result:
+                print("git clone failed, check the network or repo url")
+                return
+        self.db["base"]["HEAD"] = get_cur_head(os.path.join(self.docs_path, "docs"))
         self.md_num, self.repo_all_md_path = self.find_md_files(path=self.zh_docs_path)
         self.db["base"]["md_number"] = self.md_num
         for i in self.repo_all_md_path:
             self.record_mdx(i)
         exporter = MDExporter(docs_path=self.docs_path, db=self.db)
-        exporter.forward(api_delete=False)
+        exporter.forward(api_delete=False, mdsplit=False)
         self.count_all_split_md()
         self.write_db()
         # if api:

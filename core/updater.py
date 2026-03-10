@@ -3,7 +3,7 @@ import subprocess
 from utils.build_db import BuildDB
 from plugin.kbapi import KbApi
 from core.mdexporter import MDExporter
-from utils.tools import recover_ol_md_path
+from utils.tools import recover_ol_md_path, get_cur_head
 class Updater(BuildDB):
     def __init__(self, docs_path):
         super().__init__(docs_path)
@@ -11,18 +11,45 @@ class Updater(BuildDB):
         self.need_update_set = set()
 
     def git_pull(self, git_repo_path='./data_test/docs'):
-        original_dir = os.getcwd()
-        os.chdir(git_repo_path)
-        result = subprocess.run(['git', 'pull'], capture_output=True, text=True, check=True)
+        try:
+            # Check if the path is a valid Git repository
+            if not os.path.isdir(git_repo_path):
+                print(f"Error: {git_repo_path} is not a valid directory.")
+                return None
+            
+            # Run git rev-parse HEAD command in the specified directory
+            result = subprocess.run(
+                ['git', 'pull'],
+                cwd=git_repo_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+                
+        except subprocess.CalledProcessError as e:
+            print(f"Error git pull: {e.stderr.strip()}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            return None
+
+
         result_str = result.stdout.strip()
-        # print(result_str)
-        os.chdir(original_dir)
-        cur_head = self.get_cur_head(self.docs_path)
+        cur_head = get_cur_head(self.docs_path)
         if cur_head == self.db["base"]["HEAD"]:
             print("ZZF: Already up to date")
         else:
-            os.chdir(git_repo_path)
-            result = subprocess.run(['git', 'diff', '--name-status', self.db["base"]["HEAD"]], capture_output=True, text=True, check=True)
+            try:
+                result = subprocess.run(['git', 'diff', '--name-status', self.db["base"]["HEAD"]], cwd=git_repo_path, capture_output=True, text=True, check=True)
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error git pull: {e.stderr.strip()}")
+                return None
+            
+            except Exception as e:
+                print(f"Unexpected error: {str(e)}")
+                return None
+        
             result_str = result.stdout.strip()
             print(result_str)
             if len(result_str) > 0:
@@ -59,7 +86,6 @@ class Updater(BuildDB):
                                     zh_docs_path = os.path.join(*key.split("/")[2:])
                                     self.need_update_set.add(zh_docs_path) ## 这里存在 mdx, 但是已经更换母 md 的情况，需要在数据库中，处理空索引
                         ## 暂时不考虑 D 情况，无耦合
-            os.chdir(original_dir)
         return
 
     def delete_useless(self):
@@ -101,7 +127,7 @@ class Updater(BuildDB):
 
         print(len(need_update_full_path))
         exporter = MDExporter(docs_path=self.docs_path, docs_list=need_update_full_path, db=self.db)
-        update_lists = exporter.forward(api_delete=True)
+        update_lists = exporter.forward(api_delete=False)
         # api = KbApi()
         # api.api_upload_files("radxa_docs", update_lists) # TODO
 
@@ -130,10 +156,10 @@ class Updater(BuildDB):
 
     def forward(self):
         self.git_pull(self.docs_path)
-        self.delete_useless()
+        # self.delete_useless()
         self.update()
-        self.api_update()
-        self.db["base"]["HEAD"] = self.get_cur_head(self.docs_path)
+        # self.api_update()
+        self.db["base"]["HEAD"] = get_cur_head(self.docs_path)
         self.count_all_split_md()
         # self.show_db()
         self.write_db()

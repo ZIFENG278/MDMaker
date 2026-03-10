@@ -8,6 +8,9 @@ from utils.tools import copy_md_files_with_numeric_prefix, find_md_files_with_nu
 
 
 class MDExporter():
+    """
+    可用合并 mdx -> md, 也可用拆分 md -> mdx
+    """
     def __init__(self, docs_path, docs_list=None, db=None):
         self.docs_path = os.path.normpath(docs_path)
         self.zh_docs_path = os.path.join(self.docs_path, "docs")
@@ -33,7 +36,7 @@ class MDExporter():
             if root == self.zh_docs_path:
                 product_series = None
             else:
-                product_series = root.split('/')[3]
+                product_series = root.split('/')[2]
 
             if product_series == "common" or product_series == "template":
                 continue
@@ -49,11 +52,18 @@ class MDExporter():
         return len(md_files), md_files
 
     def mdmaker_loop(self):
+
+        print("start mdmaker loop")
         # count = 0
+
+
+
         if self.docs_list is not None:
             need_loop_list = self.docs_list
         else:
             need_loop_list = self.repo_all_md_path
+
+        print("need to loop {} md files".format(len(need_loop_list)))
         for i in need_loop_list:
             mdmaker = MDMaker(i, repo_path=self.docs_path)
             result_status, result_log = mdmaker.forward()
@@ -149,9 +159,10 @@ class MDExporter():
             pass
 
 
-    def forward(self, api_delete=False):
+    def forward(self, api_delete=False, mdsplit=False):
         self.mdmaker_loop()
-        self.mdspliter_loop()
+        if mdsplit:
+            self.mdspliter_loop()
         # update_lists = find_md_files_with_numeric_prefix('./dist')
         # update_lists = self.copy_to_dist2(api_delete)
         # self.repo_delete(api_delete)

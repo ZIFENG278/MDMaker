@@ -199,12 +199,13 @@ class MDMaker():
         file_splits = self.md_path.split('/')
         # print(file_splits)
 
-        file_name = "_".join(file_splits[3:])
+        file_name = "_".join(file_splits[2:])
+        # print(file_name)
 
-        if os.path.join(*file_splits[:-1]) == self.repo_path:
+        if os.path.join(*file_splits[:-1]) == os.path.join(self.repo_path, "docs"):
             dst_path = os.path.join('', file_name)
         else:
-            dst_path = os.path.join(*file_splits[3:-1], file_name)
+            dst_path = os.path.join(*file_splits[2:-1], file_name)
         # print("ZZZ")
         # print(file_name)
         # print(dst_path)
@@ -216,14 +217,15 @@ class MDMaker():
         if not os.path.exists(dst_dir_path):
             os.makedirs(dst_dir_path, exist_ok=True)
 
-        if self.find_table():
-            # print("WARNING: {} with table".format(self.md_path))
-            self.remove_table()
-            write_file(self.content, dst_file_path)
-            return "WARNING", os.path.normpath(dst_file_path)
-        else:
-            write_file(self.content, dst_file_path)
-            return "ACCEPT", os.path.normpath(dst_file_path)
+        # if self.find_table():
+        #     # print("WARNING: {} with table".format(self.md_path))
+        #     self.remove_table()
+        #     write_file(self.content, dst_file_path)
+        #     return "WARNING", os.path.normpath(dst_file_path)
+        # else:
+        print(dst_file_path)
+        write_file(self.content, dst_file_path)
+        return "ACCEPT", os.path.normpath(dst_file_path)
 
 
 
@@ -234,7 +236,7 @@ class MDMaker():
             self.remove_sidebar()
             self.import_mdx()
             self.remove_image_html()
-            self.insert_title()
+            # self.insert_title()
             self.recover_link()
             result_log = self.write_md()
             # print(self.content)

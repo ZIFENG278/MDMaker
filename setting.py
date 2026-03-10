@@ -1,1 +1,1 @@
-repo_docs_path = "./repo_docs/docs"
+repo_docs_path = "./radxa-docs"
