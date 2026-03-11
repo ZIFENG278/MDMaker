@@ -71,7 +71,7 @@ class MDMaker():
         link_pattern = re.compile(r'\[\s*([^\]]*)\s*\]\(\s*([^\)]*)\s*\)', re.IGNORECASE)
         links = link_pattern.findall(self.content)
         office_link = "https://docs.radxa.com/"
-        over_str = "repo_docs/docs/docs/"
+        over_str = "radxa_docs/docs/"
         file_link = self.md_path[len(over_str):-3]
         if file_link.rsplit('/', 1)[-1] == "README":
             file_link = file_link.rsplit('/', 1)[0]
@@ -235,7 +235,7 @@ class MDMaker():
             # print(self.md_path)
             self.remove_sidebar()
             self.import_mdx()
-            self.remove_image_html()
+            # self.remove_image_html()
             # self.insert_title()
             self.recover_link()
             result_log = self.write_md()
