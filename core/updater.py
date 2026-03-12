@@ -164,7 +164,7 @@ class Updater(BuildDB):
         self.delete_useless()
         self.update()
         # self.api_update()
-        # self.db["base"]["HEAD"] = get_cur_head(repo_docs_path)
+        self.db["base"]["HEAD"] = get_cur_head(repo_docs_path)
         self.count_all_split_md()
         # self.show_db()
         self.write_db()
