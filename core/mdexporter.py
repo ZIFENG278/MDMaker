@@ -51,7 +51,7 @@ class MDExporter():
 
     def mdmaker_loop(self):
 
-        print("start mdmaker loop")
+        # print("start mdmaker loop")
         # count = 0
 
         if self.docs_list is not None:
@@ -59,7 +59,7 @@ class MDExporter():
         else:
             print("WARNING: no docs_list provided, start to find md files in {}".format(self.zh_docs_path if self.language == "zh" else self.en_docs_path))
 
-        print("need to export {} md files".format(len(need_loop_list)))
+        print("INFO: Export {} md files".format(len(need_loop_list)))
         for i in need_loop_list:
             mdmaker = MDMaker(i)
             result_status, dist_md_path, mdx_list = mdmaker.forward()

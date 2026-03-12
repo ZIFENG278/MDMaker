@@ -35,12 +35,12 @@ class BuildDB():
         :return:
         """
         if not os.path.exists('./json/db.json'):
-            print("create new db")
+            print("INFO: Create new db")
             return {"base": {},
                     "content":{}
                     }
         else:
-            print("use exist db")
+            print("INFO: Use exist db")
             with open('./json/db.json', 'r') as f:
                 return json.load(f)
 
@@ -141,7 +141,7 @@ class BuildDB():
         exporter = MDExporter(docs_list=self.repo_all_md_path, db=self.db)
         exporter.forward(api_delete=False, mdsplit=False)
 
-        print("radxa offline zh docs export to ./dist/zh successfully!")
+        print("INFO: radxa offline zh docs export to ./dist/zh successfully!")
 
         self.en_md_num, self.en_repo_all_md_path = self.find_md_files(path=en_docs_path)
 
@@ -150,7 +150,7 @@ class BuildDB():
         #     self.record_mdx(i)
         exporter = MDExporter(docs_list=self.en_repo_all_md_path, db=self.db)
         exporter.forward(api_delete=False, mdsplit=False)
-        print("radxa offline en docs export to ./dist/en successfully!")
+        print("INFO: radxa offline en docs export to ./dist/en successfully!")
 
 
         self.count_all_split_md()

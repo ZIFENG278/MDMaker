@@ -40,7 +40,7 @@ class Updater(BuildDB):
         cur_head = get_cur_head(repo_docs_path)
         if cur_head == self.db["base"]["HEAD"]:
             print("GIT: Already up to date")
-            print("No any files need to update")
+            print("INFO: No any files need to update")
         else:
             try:
                 result = subprocess.run(['git', 'diff', '--name-status', self.db["base"]["HEAD"]], cwd=git_repo_path, capture_output=True, text=True, check=True)
@@ -54,6 +54,7 @@ class Updater(BuildDB):
                 return None
         
             result_str = result.stdout.strip()
+            print("GIT DIFF:")
             print(result_str)
             if len(result_str) > 0:
                 result_str_split = result_str.split('\n')
@@ -95,7 +96,7 @@ class Updater(BuildDB):
         return
 
     def delete_useless(self, enable_api=False):
-        print(self.need_delete_set)
+        # print(self.need_delete_set)
         api = KbApi(self.db)
         for i in self.need_delete_set:
             if  i in self.db["content"]:
@@ -104,7 +105,7 @@ class Updater(BuildDB):
 
                 try:
                     os.remove(self.db["content"][i]["export"])
-                    print("delete dist file: {}".format(self.db["content"][i]["export"]))
+                    print("INFO: Delete dist file: {}".format(self.db["content"][i]["export"]))
 
                 except:
                     print("WARNING: delete: {} not exist".format(self.db["content"][i]["export"]))
@@ -130,7 +131,7 @@ class Updater(BuildDB):
 
 
     def update(self):
-        print(self.need_update_set)
+        # print(self.need_update_set)
         exporter = MDExporter(docs_list=self.need_update_set, db=self.db)
         exporter.forward(api_delete=False)
         # api = KbApi()
@@ -168,3 +169,4 @@ class Updater(BuildDB):
         self.count_all_split_md()
         # self.show_db()
         self.write_db()
+        print("INFO: radxa docs and dist update done!")
