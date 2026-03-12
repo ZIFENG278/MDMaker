@@ -1,1 +1,5 @@
-repo_docs_path = "./radxa-docs"
+repo_docs_path = "radxa-docs"
+zh_docs_path = repo_docs_path + "/docs"
+en_docs_path = repo_docs_path + "/i18n/en/docusaurus-plugin-content-docs/current"
+dist_path = "dist"
+repo_url = "https://github.com/radxa/radxa-docs.git"

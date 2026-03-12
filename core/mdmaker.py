@@ -2,13 +2,13 @@ from utils.tools import read_file, write_file
 import re
 import os
 import json
+from setting import *
 
 class MDMaker():
-    def __init__(self, md_path, repo_path, db=None):
+    def __init__(self, md_path, db=None):
         self.md_path = md_path
         self.add_title = []
         self.status = True
-        self.repo_path = repo_path
         self.content = self.read_check_file(self.md_path)
 
 
@@ -70,8 +70,12 @@ class MDMaker():
     def recover_link(self):
         link_pattern = re.compile(r'\[\s*([^\]]*)\s*\]\(\s*([^\)]*)\s*\)', re.IGNORECASE)
         links = link_pattern.findall(self.content)
-        office_link = "https://docs.radxa.com/"
-        over_str = "radxa_docs/docs/"
+        if "i18n" in self.md_path:
+            over_str = en_docs_path + "/"
+            office_link = "https://docs.radxa.com/en/"
+        else:
+            over_str = zh_docs_path + "/"
+            office_link = "https://docs.radxa.com/"
         file_link = self.md_path[len(over_str):-3]
         if file_link.rsplit('/', 1)[-1] == "README":
             file_link = file_link.rsplit('/', 1)[0]
@@ -86,14 +90,10 @@ class MDMaker():
                 matches = pattern.findall(i[1])
                 sub_title = matches[0][-1]
                 http_link = "{}#{}".format(file_link, sub_title)
-                # print(http_link)
             elif i[1].startswith('/'):
                 http_link = office_link + i[1][1:]
-                # print(http_link)
             else:
                 http_link = "{}/../{}".format(file_link, i[1])
-                # print(file_link)
-                # print(http_link)
             self.content = self.content.replace("[{}]({})".format(i[0], i[1]), "[{}]({})".format(i[0], http_link))
 
 
@@ -131,7 +131,7 @@ class MDMaker():
     def import_mdx(self):
         import_pattern = re.compile(r'import\s+(.*)\s+from\s+(.*)', re.MULTILINE)
         imports = import_pattern.findall(self.content)
-
+        mdx_list = []
         if len(imports) != 0:
             for import_name, path in imports:
                 mdx_path = path.replace('\\', '')
@@ -146,6 +146,7 @@ class MDMaker():
 
                 if len(component_use) != 0:
                     if os.path.exists(os.path.normpath(mdx_file_path)):
+                        mdx_list.append(os.path.normpath(mdx_file_path))
                         # print("find")
                         mdx_content = read_file(mdx_file_path)
                         # print(f"<{import_name}{component_use[0]}/>")
@@ -161,6 +162,7 @@ class MDMaker():
 
                     else:
                         print(f"Warning: MDX file '{mdx_file_path}' does not exist. in {self.md_path}")
+        return mdx_list
 
         # print(self.orl_content)
     def remove_sidebar(self):
@@ -197,23 +199,30 @@ class MDMaker():
 
     def write_md(self):
         file_splits = self.md_path.split('/')
-        # print(file_splits)
 
-        file_name = "_".join(file_splits[2:])
-        # print(file_name)
+        if "i18n" in self.md_path:
+            file_name = "_".join(file_splits[len(en_docs_path.split('/')):])
 
-        if os.path.join(*file_splits[:-1]) == os.path.join(self.repo_path, "docs"):
-            dst_path = os.path.join('', file_name)
+            if os.path.join(*file_splits[:-1]) == en_docs_path:
+                dst_path = os.path.join('', file_name)
+            else:
+                dst_path = os.path.join(*file_splits[len(en_docs_path.split('/')):-1], file_name)
+
+            dst_file_path = os.path.join(dist_path, "en", dst_path)
+
         else:
-            dst_path = os.path.join(*file_splits[2:-1], file_name)
-        # print("ZZZ")
-        # print(file_name)
-        # print(dst_path)
+            file_name = "_".join(file_splits[len(zh_docs_path.split('/')):])
 
-        dst_file_path = os.path.join("./dist/", dst_path)
+            if os.path.join(*file_splits[:-1]) == zh_docs_path:
+                dst_path = os.path.join('', file_name)
+            else:
+                dst_path = os.path.join(*file_splits[len(zh_docs_path.split('/')):-1], file_name)
+
+            dst_file_path = os.path.join(dist_path, "zh", dst_path)
+
+
+
         dst_dir_path = os.path.join(*dst_file_path.split('/')[:-1])
-
-
         if not os.path.exists(dst_dir_path):
             os.makedirs(dst_dir_path, exist_ok=True)
 
@@ -223,7 +232,7 @@ class MDMaker():
         #     write_file(self.content, dst_file_path)
         #     return "WARNING", os.path.normpath(dst_file_path)
         # else:
-        print(dst_file_path)
+        # print(dst_file_path)
         write_file(self.content, dst_file_path)
         return "ACCEPT", os.path.normpath(dst_file_path)
 
@@ -234,15 +243,15 @@ class MDMaker():
         if self.status:
             # print(self.md_path)
             self.remove_sidebar()
-            self.import_mdx()
+            mdx_list = self.import_mdx()
             # self.remove_image_html()
             # self.insert_title()
             self.recover_link()
-            result_log = self.write_md()
+            result_log, dist_md_path = self.write_md()
             # print(self.content)
 
-            return result_log
+            return result_log, dist_md_path, mdx_list
         else:
-            return "ERROR", self.md_path
+            return "ERROR", self.md_path, None
 
 

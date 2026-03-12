@@ -5,18 +5,16 @@ from core.mdmaker import MDMaker
 from core.mdspliter import MdSpliter
 from plugin.kbapi import KbApi
 from utils.tools import copy_md_files_with_numeric_prefix, find_md_files_with_numeric_prefix
-
+from setting import *
 
 class MDExporter():
     """
     可用合并 mdx -> md, 也可用拆分 md -> mdx
     """
-    def __init__(self, docs_path, docs_list=None, db=None):
-        self.docs_path = os.path.normpath(docs_path)
-        self.zh_docs_path = os.path.join(self.docs_path, "docs")
+    def __init__(self, docs_list=None, db=None):
         self.docs_list = docs_list
         self.db = db
-        _, self.repo_all_md_path = self.find_md_files(path=self.zh_docs_path)
+        # _, self.repo_all_md_path = self.find_md_files(path=self.zh_docs_path)
         # self.dist_all_md_path = self.find_md_files(path="./dist")
         self.status_dict = {"WARNING": [],
                             "ACCEPT": [],
@@ -25,52 +23,62 @@ class MDExporter():
         self.split_path = {}
 
 
-    def find_md_files(self, path):
-        """
-        找到所有 md 文件， 除了 common 和 template 还有 Home.md
-        :param path:
-        :return:
-        """
-        md_files = []
-        for root, dirs, files in os.walk(path):
-            if root == self.zh_docs_path:
-                product_series = None
-            else:
-                product_series = root.split('/')[2]
+    # def find_md_files(self, path):
+    #     """
+    #     找到所有 md 文件， 除了 common 和 template 还有 Home.md
+    #     :param path:
+    #     :return:
+    #     """
+    #     md_files = []
+    #     for root, dirs, files in os.walk(path):
+    #         if root == self.zh_docs_path:
+    #             product_series = None
+    #         else:
+    #             product_series = root.split('/')[2]
 
-            if product_series == "common" or product_series == "template":
-                continue
+    #         if product_series == "common" or product_series == "template":
+    #             continue
 
-            for file in files:
-                if file == "Home.md":
-                    continue
-                if file.endswith('.md'):
-                    md_files.append(os.path.join(root, file))
+    #         for file in files:
+    #             if file == "Home.md":
+    #                 continue
+    #             if file.endswith('.md'):
+    #                 md_files.append(os.path.join(root, file))
 
-        # print(len(md_files)) # 1224
-        # print(md_files[22]) # ./repo_docs/docs/docs/zero/zero/radxa-os/social.md
-        return len(md_files), md_files
+    #     # print(len(md_files)) # 1224
+    #     # print(md_files[22]) # ./repo_docs/docs/docs/zero/zero/radxa-os/social.md
+    #     return len(md_files), md_files
 
     def mdmaker_loop(self):
 
         print("start mdmaker loop")
         # count = 0
 
-
-
         if self.docs_list is not None:
             need_loop_list = self.docs_list
         else:
-            need_loop_list = self.repo_all_md_path
+            print("WARNING: no docs_list provided, start to find md files in {}".format(self.zh_docs_path if self.language == "zh" else self.en_docs_path))
 
-        print("need to loop {} md files".format(len(need_loop_list)))
+        print("need to export {} md files".format(len(need_loop_list)))
         for i in need_loop_list:
-            mdmaker = MDMaker(i, repo_path=self.docs_path)
-            result_status, result_log = mdmaker.forward()
-            self.status_dict[result_status].append(result_log)
-            # count += 1
-            # if count == 20:
-            #     break ## TODO
+            mdmaker = MDMaker(i)
+            result_status, dist_md_path, mdx_list = mdmaker.forward()
+            if i not in self.db["content"]:
+                # print(doc_path)# 初始化数据
+                self.db["content"][i] = {
+                    "md": i,
+                    "mdx": [],
+                    "split": {},
+                    "export": None,
+                    # "remote": False
+                }
+
+            self.db["content"][i]["export"] = dist_md_path
+            self.db["content"][i]["mdx"] = mdx_list
+            self.status_dict[result_status].append(dist_md_path)
+                # count += 1
+                # if count == 20:
+                #     break ## TODO
 
     def mdspliter_loop(self):
         for i in self.status_dict["ACCEPT"]:
